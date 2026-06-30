@@ -27,3 +27,6 @@ class SecurityEvent(models.Model):
         return f"{self.severity}: {self.event_type}"
 
 
+
+
+

@@ -16,3 +16,5 @@ INSTALLED_APPS = [
 
 # Tell Django to use Channels/Daphne for processing network traffic
 ASGI_APPLICATION = 'config.asgi.application'
+
+ROOT_URLCONF = 'config.urls'
