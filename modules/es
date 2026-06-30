@@ -1,0 +1,86 @@
+import asyncio
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - [CAPTURE] - %(levelname)s - %(message)s')
+
+class SignalCaptureModule:
+    def __init__(self, data_queue: asyncio.Queue):
+        self.data_queue = data_queue
+        self._is_capturing = False
+        self._capture_task = None
+        self._processor_task = None
+
+    async def start_capture(self, interface_name: str):
+        """Activates the interface and begins reading incoming wireless data."""
+        if self._is_capturing:
+            logging.warning("Capture stream is already active.")
+            return
+
+        logging.info(f"Initializing wireless interface wrapper on: {interface_name}")
+        self._is_capturing = True
+        
+        # Start both the stream reader (producer) and the data parser (consumer)
+        self._capture_task = asyncio.create_task(self._stream_reader(interface_name))
+        self._processor_task = asyncio.create_task(self._stream_processor())
+
+    async def stop_capture(self):
+        """Gracefully spins down interfaces and flushes remaining buffers."""
+        if not self._is_capturing:
+            return
+
+        logging.info("Stopping capture stream and releasing interface locks...")
+        self._is_capturing = False
+
+        if self._capture_task:
+            self._capture_task.cancel()
+        if self._processor_task:
+            self._processor_task.cancel()
+
+        logging.info("Signal capture engine offline.")
+
+    async def _stream_reader(self, interface: str):
+        """
+        Producer Loop: Simulates reading raw frame or packet buffers 
+        from the underlying hardware layer and pushing them into the internal queue.
+        """
+        try:
+            sample_count = 0
+            while self._is_capturing:
+                # In production, this block reads from an actual interface socket or abstraction layer.
+                # Example standard implementation wrapper:
+                # raw_data = await system_hw_layer.read_frame()
+                
+                await asyncio.sleep(0.5)  # Simulating packet arrival intervals
+                sample_count += 1
+                
+                mock_payload = {
+                    "packet_id": sample_count,
+                    "signal_strength_dbm": -65 - (sample_count % 10),
+                    "protocol": "802.11",
+                    "raw_bytes": b"\x00\x11\x22\x33"
+                }
+
+                # Push to queue non-blockingly. If the queue is full, it drops or waits based on configuration.
+                await self.data_queue.put(mock_payload)
+                
+        except asyncio.CancelledError:
+            pass
+
+    async def _stream_processor(self):
+        """
+        Consumer Loop: Pulls raw elements out of the queue asynchronously
+        and hands them to the analysis engine to check against the vulnerability database.
+        """
+        try:
+            while self._is_capturing:
+                # Wait until there is an item available in the queue
+                payload = await self.data_queue.get()
+                
+                # Forward to analysis pipeline
+                logging.info(f"Processing Packet #{payload['packet_id']} | RSSI: {payload['signal_strength_dbm']} dBm")
+                
+                # Notify the queue that the item has been handled successfully
+                self.data_queue.task_done()
+                
+        except asyncio.CancelledError:
+            pass

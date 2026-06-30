@@ -1,0 +1,50 @@
+import asyncio
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - [CAPTURE] - %(levelname)s - %(message)s")
+
+class SignalCaptureModule:
+    def __init__(self, data_queue: asyncio.Queue):
+        self.data_queue = data_queue
+        self._is_capturing = False
+        self._capture_task = None
+        self._processor_task = None
+
+    async def start_capture(self, interface_name: str):
+        if self._is_capturing:
+            return
+        self._is_capturing = True
+        self._capture_task = asyncio.create_task(self._stream_reader(interface_name))
+        self._processor_task = asyncio.create_task(self._stream_processor())
+
+    async def stop_capture(self):
+        if not self._is_capturing:
+            return
+        self._is_capturing = False
+        if self._capture_task: self._capture_task.cancel()
+        if self._processor_task: self._processor_task.cancel()
+
+    async def _stream_reader(self, interface: str):
+        try:
+            sample_count = 0
+            while self._is_capturing:
+                await asyncio.sleep(0.5)
+                sample_count += 1
+                mock_payload = {
+                    "packet_id": sample_count,
+                    "signal_strength_dbm": -65 - (sample_count % 10),
+                    "protocol": "802.11",
+                    "raw_bytes": b"\x00\x11\x22\x33"
+                }
+                await self.data_queue.put(mock_payload)
+        except asyncio.CancelledError:
+            pass
+
+    async def _stream_processor(self):
+        try:
+            while self._is_capturing:
+                payload = await self.data_queue.get()
+                logging.info(f"Processing Packet #{payload[\x27packet_id\x27]} | RSSI: {payload[\x27signal_strength_dbm\x27]} dBm")
+                self.data_queue.task_done()
+        except asyncio.CancelledError:
+            pass -n 5 modules/signal_capture/receiver.py
