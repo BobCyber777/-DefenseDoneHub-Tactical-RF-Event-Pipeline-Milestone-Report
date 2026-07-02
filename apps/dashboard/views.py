@@ -1,6 +1,15 @@
 from django.shortcuts import render
+from .models import SecurityEvent
+
 
 def index(request):
-    # This renders your dashboard HTML file
-    return render(request, 'dashboard_test.html')
-# Create your views here.
+
+    events = SecurityEvent.objects.order_by("-created_at")[:100]
+
+    return render(
+        request,
+        "dashboard/index.html",
+        {
+            "events": events
+        }
+    )

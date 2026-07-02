@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>DefenseDoneHub Tactical Ground Control Station</title>
+
+<style>
+
+body{
+
+    background:#111;
+    color:#eee;
+    font-family:Arial;
+    margin:30px;
+
+}
+
+table{
+
+    width:100%;
+    border-collapse:collapse;
+
+}
+
+th,td{
+
+    border:1px solid #444;
+    padding:8px;
+
+}
+
+th{
+
+    background:#222;
+
+}
+
+.HIGH{
+
+    color:red;
+    font-weight:bold;
+
+}
+
+.MEDIUM{
+
+    color:orange;
+
+}
+
+.LOW{
+
+    color:lime;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>DefenseDoneHub</h1>
+
+<h2>Tactical Drone Defense Ground Control Station</h2>
+
+<table>
+
+<tr>
+
+<th>Time</th>
+<th>Severity</th>
+<th>Event</th>
+<th>Description</th>
+<th>Source</th>
+
+</tr>
+
+{% for event in events %}
+
+<tr>
+
+<td>{{ event.created_at }}</td>
+
+<td class="{{ event.severity }}">
+{{ event.severity }}
+</td>
+
+<td>{{ event.event_type }}</td>
+
+<td>{{ event.description }}</td>
+
+<td>{{ event.source }}</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+
+<td colspan="5">
+
+No events have been recorded.
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+
+</html>
+
+
