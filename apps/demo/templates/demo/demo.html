@@ -1,0 +1,399 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>DefenseDoneHub Tactical GCS</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --radar-color: #00ff88; /* green default */
+        }
+        body {
+            background: #0d1117;
+            color: #fff;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .navbar {
+            background: #161b22;
+        }
+        .card {
+            background: #161b22;
+            border: 1px solid #30363d;
+        }
+        .stat h2 {
+            color: #00ff88;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #00ff88;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .table {
+            color: #fff;
+        }
+        code {
+            color: #ff79c6;
+        }
+
+        /* RADAR SYSTEM STYLES */
+        .radar-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .radar-glow {
+            filter: drop-shadow(0 0 12px var(--radar-color));
+        }
+        .ring {
+            fill: none;
+            stroke: color-mix(in srgb, var(--radar-color) 25%, transparent);
+            stroke-width: 1;
+        }
+        .grid {
+            stroke: color-mix(in srgb, var(--radar-color) 15%, transparent);
+            stroke-width: 1;
+        }
+        .sweep {
+            transform-origin: 200px 200px;
+            animation: rotateSweep 2.5s linear infinite;
+            fill: color-mix(in srgb, var(--radar-color) 20%, transparent);
+        }
+        @keyframes rotateSweep {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .center-dot {
+            fill: var(--radar-color);
+            animation: pulseCenter 1.5s infinite;
+        }
+        @keyframes pulseCenter {
+            0% { r: 6; opacity: 1; }
+            50% { r: 10; opacity: 0.4; }
+            100% { r: 6; opacity: 1; }
+        }
+        .dot {
+            fill: var(--radar-color);
+            opacity: 0.8;
+            animation: blink 2s infinite;
+        }
+        @keyframes blink {
+            0% { opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { opacity: 0.2; }
+        }
+
+        /* DYNAMIC MAP NODE PULSE EFFECT */
+        #attackMap circle {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { r: 5; opacity: 1; }
+            50% { r: 8; opacity: .5; }
+            100% { r: 5; opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-dark px-3 py-2 border-bottom border-secondary d-flex justify-content-between align-items-center">
+
+    <!-- BRAND -->
+    <span class="navbar-brand mb-0 h1 font-monospace">
+        <i class="bi bi-shield-lock-fill text-success"></i>
+        DefenseDoneHub 
+        <span class="text-muted small">
+            | Tactical Drone Defense Ground Control Station
+        </span>
+    </span>
+
+    <!-- CONTROLS -->
+   <div class="d-flex align-items-center gap-2">
+
+    {% if request.path == "/demo/" %}
+
+        <a href="/" class="btn btn-outline-info btn-sm font-monospace fw-bold px-3">
+            <i class="bi bi-house"></i> BACK TO HOME
+        </a>
+
+    {% else %}
+
+        <a href="/demo/" class="btn btn-outline-success btn-sm font-monospace fw-bold px-3">
+            <i class="bi bi-radar"></i> ENTER GROUND CONTROL
+        </a>
+
+    {% endif %}
+
+    <a href="#attackMap" class="btn btn-outline-info btn-sm font-monospace fw-bold px-3">
+        <i class="bi bi-globe"></i> GLOBAL MAP
+    </a>
+
+    <a href="#radarBox" class="btn btn-outline-warning btn-sm font-monospace fw-bold px-3">
+        <i class="bi bi-radar"></i> LIVE RADAR
+    </a>
+
+
+
+    </div>
+</nav>
+
+
+
+<div class="container mt-4">
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card p-3">
+                <h5><i class="bi bi-images"></i> Network Monitoring Assets</h5>
+                <div class="d-flex flex-wrap gap-3 mt-3 justify-content-center">
+                    <img src="{% static 'demo/hero.jpg' %}" alt="SOC Hero" class="img-thumbnail bg-dark border-secondary" style="max-width: 200px;">
+                    <img src="{% static 'demo/monitoring.jpg' %}" alt="Monitoring" class="img-thumbnail bg-dark border-secondary" style="max-width: 200px;">
+                    <img src="{% static 'demo/wireless.jpg' %}" alt="Wireless Scan" class="img-thumbnail bg-dark border-secondary" style="max-width: 200px;">
+                    <img src="{% static 'demo/incident.jpg' %}" alt="Incident Response" class="img-thumbnail bg-dark border-secondary" style="max-width: 200px;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card p-3 text-center stat">
+                <h2 id="active-alerts">{{ active_alerts }}</h2>
+                <p class="text-muted mb-0">Active Alerts</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 text-center stat">
+                <h2 id="online-sensors">{{ online_sensors }}</h2>
+                <p class="text-muted mb-0">Online Sensors</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 text-center stat">
+                <h2 id="threats-blocked">{{ threats_blocked }}</h2>
+                <p class="text-muted mb-0">Threats Blocked</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card p-3 text-center stat">
+                <h2>
+                    <span class="status-dot"></span>
+                    <span id="system-status">{{ system_status }}</span>
+                </h2>
+                <p class="text-muted mb-0">System Status</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card p-3">
+                <h5>
+                    <i class="bi bi-globe-americas text-success"></i>
+                    Global Threat Activity Map
+                </h5>
+                <div class="mt-3">
+                    <svg id="attackMap" viewBox="0 0 1000 500" class="w-100" style="background:#0b1220; border-radius:10px;">
+                        <rect width="1000" height="500" fill="#081018"/>
+                        <path d="M120 120 L230 90 L260 180 L170 240 L110 180 Z" fill="#173b2f"/>
+                        <path d="M250 260 L300 250 L330 380 L270 430 L230 340 Z" fill="#173b2f"/>
+                        <path d="M470 90 L690 90 L760 180 L670 250 L540 220 L460 150 Z" fill="#173b2f"/>
+                        <path d="M560 260 L640 250 L680 420 L610 460 L540 350 Z" fill="#173b2f"/>
+                        <path d="M790 150 L900 180 L930 280 L840 320 L760 240 Z" fill="#173b2f"/>
+                        <circle id="usa" cx="180" cy="170" r="5" fill="#00ff88"/>
+                        <circle id="brazil" cx="280" cy="340" r="5" fill="#00ff88"/>
+                        <circle id="uk" cx="505" cy="125" r="5" fill="#00ff88"/>
+                        <circle id="germany" cx="535" cy="140" r="5" fill="#00ff88"/>
+                        <circle id="india" cx="690" cy="240" r="5" fill="#00ff88"/>
+                        <circle id="china" cx="760" cy="190" r="5" fill="#00ff88"/>
+                        <circle id="japan" cx="860" cy="180" r="5" fill="#00ff88"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4 mb-5 g-4">
+        <div class="col-lg-8">
+            <div class="card p-3 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="bi bi-exclamation-triangle text-warning"></i>
+                        Recent Security Events
+                    </h5>
+                    <a href="/demo/" class="btn btn-outline-success btn-sm font-monospace fw-bold px-3">
+                        <i class="bi bi-arrow-repeat"></i> REFRESH HUD
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-dark table-hover mt-2 align-middle font-monospace small">
+                        <thead>
+                            <tr class="text-muted border-secondary">
+                                <th>Time</th>
+                                <th>Severity</th>
+                                <th>Event</th>
+                                <th>Description</th>
+                                <th>Source</th>
+                            </tr>
+                        </thead>
+                        <tbody id="events-table-body">
+                            <tr>
+                                <td>System Init</td>
+                                <td><span class="badge bg-info">INFO</span></td>
+                                <td>CORE_INITIALIZED</td>
+                                <td>Dashboard operational. Awaiting live telemetry stream data frames...</td>
+                                <td>GCS-Core</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card p-3 h-100 text-center">
+                <h5><i class="bi bi-radar text-info"></i> Live Radar Scan</h5>
+                <div class="radar-container radar-glow mt-4" id="radarBox">
+                    <svg viewBox="0 0 400 400" width="280" height="280">
+                        <circle cx="200" cy="200" r="160" class="ring"/>
+                        <circle cx="200" cy="200" r="120" class="ring"/>
+                        <circle cx="200" cy="200" r="80" class="ring"/>
+                        <circle cx="200" cy="200" r="40" class="ring"/>
+                        <line x1="200" y1="0" x2="200" y2="400" class="grid"/>
+                        <line x1="0" y1="200" x2="400" y2="200" class="grid"/>
+                        <path class="sweep" d="M200 200 L200 0 A200 200 0 0 1 380 200 Z"/>
+                        <circle cx="200" cy="200" r="6" class="center-dot"/>
+                        <circle cx="120" cy="140" r="4" class="dot"/>
+                        <circle cx="260" cy="180" r="4" class="dot"/>
+                        <circle cx="300" cy="260" r="4" class="dot"/>
+                        <circle cx="160" cy="280" r="4" class="dot"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const root = document.documentElement;
+
+    function setRadarSeverity(level) {
+        let color = "#00ff88"; 
+        if (level === "MEDIUM") {
+            color = "#ffb020"; 
+        } else if (level === "HIGH" || level === "CRITICAL") {
+            color = "#ff3b30"; 
+        }
+        root.style.setProperty("--radar-color", color);
+    }
+
+    const wsProtocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+    const socket = new WebSocket(wsProtocol + window.location.host + "/ws/dashboard/");
+
+    socket.onmessage = function(event) {
+        try {
+            const data = JSON.parse(event.data);
+            console.log("LIVE UPDATE ENGINE STREAM:", data);
+
+            if (data.active_alerts !== undefined) document.getElementById("active-alerts").innerText = data.active_alerts;
+            if (data.online_sensors !== undefined) document.getElementById("online-sensors").innerText = data.online_sensors;
+            if (data.threats_blocked !== undefined) document.getElementById("threats-blocked").innerText = data.threats_blocked;
+            if (data.system_status !== undefined) document.getElementById("system-status").innerText = data.system_status;
+
+            if (data.new_event?.severity) {
+                setRadarSeverity(data.new_event.severity);
+            } else if (data.severity) {
+                setRadarSeverity(data.severity);
+            }
+
+            if (data.new_event) {
+                const tableBody = document.getElementById("events-table-body");
+                const evt = data.new_event;
+                
+                let badgeClass = "bg-info";
+                if (evt.severity === "CRITICAL" || evt.severity === "HIGH") badgeClass = "bg-danger";
+                else if (evt.severity === "MEDIUM") badgeClass = "bg-warning";
+
+                // Fallbacks if backend names don't exactly match your manual structure variables
+                const eventTime = evt.time || new Date().toLocaleTimeString();
+                const eventType = evt.event || evt.type || "UNKNOWN_FRAME";
+                const eventDesc = evt.description || evt.desc || "No telemetry text details provided.";
+                const eventSrc = evt.source || "Unknown Node";
+
+                // FIXED: Structured payload layout map injection mapping matches table format
+                const newRow = `<tr>
+                    <td class="text-muted">${eventTime}</td>
+                    <td><span class="badge ${badgeClass}">${evt.severity}</span></td>
+                    <td class="text-info fw-bold">${eventType}</td>
+                    <td><code>${eventDesc}</code></td>
+                    <td class="text-warning">${eventSrc}</td>
+                </tr>`;
+
+                tableBody.insertAdjacentHTML('afterbegin', newRow);
+            }
+        } catch (err) {
+            console.error("Error processing unified stream data context frame:", err);
+        }
+    };
+
+    socket.onclose = function(e) {
+        console.warn("SOC real-time data pipeline dropped connectivity channels.");
+        document.getElementById("system-status").innerText = "DISCONNECTED";
+    };
+
+    // VECTORS MAP SIMULATION ENGINE
+    const nodes = {
+        usa: [180, 170], brazil: [280, 340], uk: [505, 125],
+        germany: [535, 140], india: [690, 240], china: [760, 190], japan: [860, 180]
+    };
+    const svg = document.getElementById("attackMap");
+
+    function randomNode() {
+        const keys = Object.keys(nodes);
+        return nodes[keys[Math.floor(Math.random() * keys.length)]];
+    }
+
+    function attack() {
+        let a = randomNode();
+        let b = randomNode();
+        while (a === b) { b = randomNode(); }
+
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", a[0]); line.setAttribute("y1", a[1]);
+        line.setAttribute("x2", a[0]); line.setAttribute("y2", a[1]);
+        line.setAttribute("stroke", "#00ff88");
+        line.setAttribute("stroke-width", "2");
+        line.setAttribute("opacity", "1");
+        svg.appendChild(line);
+
+        let t = 0;
+        const anim = setInterval(() => {
+            t += 0.05;
+            line.setAttribute("x2", a[0] + (b[0] - a[0]) * t);
+            line.setAttribute("y2", a[1] + (b[1] - a[1]) * t);
+            line.setAttribute("opacity", 1 - t);
+
+            if (t >= 1) {
+                clearInterval(anim);
+                line.remove();
+            }
+        }, 30);
+    }
+    setInterval(attack, 700);
+</script>
+
+</body>
+</html>
+
+
+
+
+
+

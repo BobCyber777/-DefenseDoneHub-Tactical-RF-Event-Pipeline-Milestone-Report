@@ -1,10 +1,9 @@
 from django.contrib import admin
-from django.urls import path
-from apps.dashboard import views  # Import your dashboard views
+from django.urls import path, include
+from apps.dashboard import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.index, name='dashboard_index'),  # Maps http://127.0.0.1:8000/
+    path('', views.index, name='dashboard_index'),
+    path('demo/', include('apps.demo.urls')),
 ]
-
-

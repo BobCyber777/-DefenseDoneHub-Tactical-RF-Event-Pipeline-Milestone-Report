@@ -1,0 +1,4 @@
+<video autoplay muted loop playsinline class="position-fixed top-0 start-0 w-100 h-100"
+       style="object-fit:cover;z-index:-2;opacity:.18;">
+    <source src="{% static 'demo/video/soc_background.mp4' %}" type="video/mp4">
+</video>
