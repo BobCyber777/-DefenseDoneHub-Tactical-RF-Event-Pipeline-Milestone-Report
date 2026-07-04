@@ -1,9 +1,11 @@
 from django.contrib import admin
-from django.urls import path, include
-from apps.dashboard import views
+from django.urls import include, path
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', views.index, name='dashboard_index'),
-    path('demo/', include('apps.demo.urls')),
+    path("admin/", admin.site.urls),
+
+    path("", include("apps.dashboard.urls")),
+    path("demo/", include("apps.demo.urls")),
 ]
+
+

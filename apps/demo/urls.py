@@ -1,8 +1,8 @@
 from django.urls import path
-from .views import demo_window, demo_api
+from . import views
+
+app_name = "demo"
 
 urlpatterns = [
-    path('', demo_window),          # public UI window
-    path('api/', demo_api),         # single API endpoint
+    path("", views.demo, name="index"),
 ]
-

@@ -40,10 +40,11 @@ WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = 'config.asgi.application'
 
 # --- TEMPLATE ENGINE (FIXED SYNTAX) ---
+# --- TEMPLATE ENGINE (FIXED SYNTAX) ---
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / "templates"],  # <-- Change this from [] to [BASE_DIR / "templates"]
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -55,6 +56,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 # --- DATABASE ---
 DATABASES = {
@@ -72,12 +74,10 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- STATIC FILES (THE JPG ROADMAP FIX) ---
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 
-# This maps Django directly to your /apps/demo/static directory!
 STATICFILES_DIRS = [
-    BASE_DIR / "apps" / "demo" / "static",
+    BASE_DIR / "static",
 ]
-
 
 STATIC_ROOT = BASE_DIR / 'staticfiles'

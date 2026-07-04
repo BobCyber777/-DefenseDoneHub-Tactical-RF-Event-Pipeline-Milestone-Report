@@ -13,6 +13,11 @@ def demo_window(request):
     return render(request, "demo/demo.html", context)
 
 
+def demo(request):
+    return render(request, 'demo/demo.html')
+
+
+
 # 2. This serves the JSON data that your JavaScript fetch() requests every 3 seconds
 def demo_api(request):
     return JsonResponse({

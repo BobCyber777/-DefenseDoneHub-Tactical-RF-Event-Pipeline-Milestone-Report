@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DefenseDoneHub // SOC Event Pipeline</title>
+    <style>
+        body { background: #0d1117; color: #c9d1d9; font-family: 'Courier New', monospace; padding: 20px; }
+        h1 { color: #58a6ff; border-bottom: 2px solid #21262d; padding-bottom: 10px; }
+        .filter-bar { margin-bottom: 20px; padding: 10px; background: #161b22; border-radius: 6px; }
+        .triage-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .triage-table th { background: #1f242c; padding: 12px; text-align: left; border-bottom: 2px solid #30363d; }
+        .triage-table td { padding: 12px; border-bottom: 1px solid #21262d; }
+        
+        .severity-HIGH { background: rgba(248, 81, 73, 0.15); border-left: 4px solid #f85149; color: #ff7b72; }
+        .severity-MEDIUM { background: rgba(210, 153, 34, 0.1); border-left: 4px solid #d29922; color: #e3b341; }
+        .severity-LOW { background: transparent; border-left: 4px solid #30363d; }
+        
+        .badge { padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; }
+        .badge-HIGH { background: #f85149; color: #fff; }
+        .badge-MEDIUM { background: #d29922; color: #000; }
+        .badge-LOW { background: #30363d; color: #c9d1d9; }
+        
+        .action-btn { background: #238636; color: white; border: none; padding: 6px 12px; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .action-btn:hover { background: #2ea043; }
+    </style>
+</head>
+<body>
+
+    <h1>[DEFENSE DONE HUB] Tactical RF Pipeline Triage</h1>
+
+    <div class="filter-bar">
+        <form method="GET" action="">
+            <label for="severity">Filter Severity: </label>
+            <select name="severity" id="severity" onchange="this.form.submit()" style="background: #21262d; color: white; padding: 5px; border: 1px solid #30363d;">
+                <option value="">ALL EVENTS</option>
+                <option value="HIGH" {% if request.GET.severity == 'HIGH' %}selected{% endif %}>CRITICAL THREATS</option>
+                <option value="MEDIUM" {% if request.GET.severity == 'MEDIUM' %}selected{% endif %}>ANOMALIES</option>
+                <option value="LOW" {% if request.GET.severity == 'LOW' %}selected{% endif %}>ROUTINE</option>
+            </select>
+        </form>
+    </div>
+
+    <table class="triage-table">
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Event Type</th>
+                <th>RSSI</th>
+                <th>Description</th>
+                <th>Source Sensor</th>
+                <th>Severity</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in logs %}
+            <tr id="log-row-{{ log.pk }}" class="severity-{{ log.severity }}">
+                <td>{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+                <td><strong>{{ log.event_type }}</strong></td>
+                <td>{% if log.rssi %}{{ log.rssi }} dBm{% else %}N/A{% endif %}</td>
+                <td><code>{{ log.description }}</code></td>
+                <td><em>{{ log.source|default:"Unknown Node" }}</em></td>
+                <td><span class="badge badge-{{ log.severity }}">{{ log.severity }}</span></td>
+                <td>
+                    <button class="action-btn" onclick="triageIncident({{ log.pk }})">Acknowledge</button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" style="text-align: center; color: #8b949e; padding: 30px;">Airspace clear. No active untriaged RF pipeline alerts.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <script>
+        function triageIncident(incidentId) {
+            fetch(`/soc/triage/${incidentId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const row = document.getElementById(`log-row-${incidentId}`);
+                    row.style.transition = "all 0.4s ease";
+                    row.style.opacity = "0";
+                    setTimeout(() => row.remove(), 400);
+                }
+            }).catch(err => console.error("Error updating triage status:", err));
+        }
+    </script>
+</body>
+</html>
