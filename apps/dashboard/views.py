@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
 from .models import SecurityEvent
+from modules.alerts.manager import get_threat_level
 
 
 def index(request):
@@ -41,6 +42,19 @@ def close_incident(request, pk):
     return JsonResponse({
         "status": "success",
         "message": f"Incident {pk} triaged and closed."
+    })
+
+
+def widget_threat_level(request):
+    """
+    API endpoint returning current global threat metrics for the UI widget.
+    """
+    data = get_threat_level()
+
+    return JsonResponse({
+        "widget": "threat_level",
+        "status": "ok",
+        "data": data
     })
 
 

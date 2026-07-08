@@ -1,0 +1,98 @@
+services:
+  # --- TAILSCALE SECURE GATEWAY ---
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: ts-soc-gateway
+    hostname: soc-hub-station
+    environment:
+      - TS_AUTHKEY=tskey-auth-YOUR_KEY_HERE # Replace with your reusable, non-ephemeral key
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json # Routes Tailscale traffic into local Docker services
+    volumes:
+      - ts-state:/var/lib/tailscale
+      - ./tailscale-config:/config # Stores your routing rules
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    restart: always
+    networks:
+      - default
+
+  # --- YOUR SERVICES ---
+  gitlab:
+    image: 'gitlab/gitlab-ce:latest'
+    container_name: gitlab-local
+    restart: always
+    hostname: 'gitlab.local'
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'http://soc-hub-station:8080'
+        puma['port'] = 8018
+        puma['worker_processes'] = 2
+        sidekiq['max_concurrency'] = 10
+    ports:
+      - '8080:8080' 
+      - '2222:22'
+    volumes:
+      - ./gitlab/config:/etc/gitlab
+      - ./gitlab/logs:/var/log/gitlab
+      - ./gitlab/data:/var/opt/gitlab
+    networks:
+      - default
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings
+    depends_on:
+      - event-bus
+    networks:
+      - default
+
+  event-bus:
+    build:
+      context: .
+      dockerfile: docker/event-bus.Dockerfile
+    networks:
+      - default
+
+  fusion:
+    build:
+      context: .
+      dockerfile: docker/rules.Dockerfile
+    networks:
+      - default
+
+  sensors:
+    build:
+      context: .
+      dockerfile: docker/sensors.Dockerfile
+    networks:
+      - default
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/worker.Dockerfile
+    networks:
+      - default
+
+volumes:
+  ts-state:
+
+networks:
+  default:
+    driver: bridge
+
+
+
+
+
+
+
+
+

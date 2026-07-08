@@ -6,6 +6,7 @@ urlpatterns = [
 
     path("", include("apps.dashboard.urls")),
     path("demo/", include("apps.demo.urls")),
+    path("occ/", include("modules.occ.urls")),
 ]
 
 

@@ -4,3 +4,17 @@ __pycache__/
 *.pyc
 google-chrome-stable_current_amd64.deb
 staticfiles/
+# Databases and backups
+*.sqlite3
+*.json
+*.bak
+*.save
+
+# GitLab configurations and private data
+gitlab/
+
+# OS installers
+*.deb
+
+# Static files build directory (optional, usually generated on deploy)
+staticfiles/

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+
+<link rel="stylesheet"
+      href="{% static 'occ/css/occ.css' %}">
+
+<div class="occ-container">
+
+    {% include "occ/sidebar.html" %}
+
+    <main>
+
+        {% include "occ/topbar.html" %}
+
+        <section class="dashboard-grid">
+
+            <div class="card">
+                Threat Level
+            </div>
+
+            <div class="card">
+                Active Alerts
+            </div>
+
+            <div class="card">
+                Drone Fleet
+            </div>
+
+            <div class="card">
+                Sensor Health
+            </div>
+
+            <div class="card">
+                Intelligence Feed
+            </div>
+
+            <div class="card">
+                Incident Timeline
+            </div>
+
+            <div class="card map">
+
+                Tactical Map
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+<script src="{% static 'occ/js/occ.js' %}"></script>
+
+{% endblock %}

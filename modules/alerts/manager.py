@@ -5,12 +5,12 @@ Alert Manager:
 Converts RuleResults into Alerts
 and manages lifecycle operations.
 """
-
 import logging
 import hashlib
 from datetime import datetime
 
 from .models import Alert
+from apps.dashboard.models import SecurityEvent
 from .states import AlertSeverity, AlertStatus
 from .registry import AlertRegistry
 
@@ -30,16 +30,13 @@ class AlertManager:
         Create a deterministic fingerprint
         to group similar alerts.
         """
-
         base = f"{result.rule}|{getattr(result.event, 'source', '')}|{getattr(result.event, 'event_type', '')}"
-
         return hashlib.sha256(base.encode()).hexdigest()
 
     def _map_severity(self, score: int) -> AlertSeverity:
         """
         Convert rule score into alert severity.
         """
-
         if score >= 85:
             return AlertSeverity.CRITICAL
         if score >= 70:
@@ -54,7 +51,6 @@ class AlertManager:
         """
         Convert RuleResult → Alert.
         """
-
         fingerprint = self._build_fingerprint(result)
         severity = self._map_severity(result.score)
 
@@ -79,7 +75,6 @@ class AlertManager:
         """
         Process multiple RuleResults.
         """
-
         alerts = []
 
         for result in rule_results:
@@ -95,9 +90,7 @@ class AlertManager:
                 )
 
             except Exception:
-                logger.exception(
-                    "[ALERT] Failed to process RuleResult"
-                )
+                logger.exception("[ALERT] Failed to process RuleResult")
 
         return alerts
 
@@ -121,3 +114,39 @@ class AlertManager:
         if alert:
             alert.archive()
             logger.info("[ALERT] Archived %s", fingerprint)
+
+
+def get_threat_level():
+    """
+    Calculate global threat level based on untriaged security events.
+    """
+    events = SecurityEvent.objects.filter(is_triaged=False)
+
+    critical = events.filter(severity="critical").count()
+    high = events.filter(severity="high").count()
+    medium = events.filter(severity="medium").count()
+
+    score = (critical * 5) + (high * 3) + (medium * 1)
+
+    if score > 50:
+        level = "CRITICAL"
+    elif score > 25:
+        level = "HIGH"
+    elif score > 10:
+        level = "ELEVATED"
+    else:
+        level = "NORMAL"
+
+    return {
+        "level": level,
+        "score": score,
+        "counts": {
+            "critical": critical,
+            "high": high,
+            "medium": medium,
+        },
+    }
+
+
+
+
