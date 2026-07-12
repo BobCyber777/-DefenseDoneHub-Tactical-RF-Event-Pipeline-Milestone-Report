@@ -1,0 +1,49 @@
+<div id="threat-widget">
+    <h3>Threat Level: <span id="threat-level">Loading...</span></h3>
+    <p>Score: <span id="threat-score">-</span></p>
+    <small>Critical: <span id="threat-critical">-</span></small>
+</div>
+
+<script>
+const endpoint = "/dashboard/widgets/threat-level/";
+
+function renderThreatWidget(data) {
+    document.getElementById("threat-level").textContent = data.level;
+    document.getElementById("threat-score").textContent = data.score;
+    document.getElementById("threat-critical").textContent = data.counts.critical;
+}
+
+async function loadThreatLevel() {
+    try {
+        const res = await fetch(endpoint, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            }
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const json = await res.json();
+
+        if (json && json.data) {
+            renderThreatWidget(json.data);
+        }
+
+    } catch (err) {
+        console.error("Threat widget error:", err);
+
+        document.getElementById("threat-level").textContent = "ERROR";
+        document.getElementById("threat-score").textContent = "-";
+        document.getElementById("threat-critical").textContent = "-";
+    }
+}
+
+// initial load
+loadThreatLevel();
+
+// polling (temporary until WebSockets)
+setInterval(loadThreatLevel, 5000);
+</script>
+
+

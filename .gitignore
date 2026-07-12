@@ -18,3 +18,4 @@ gitlab/
 
 # Static files build directory (optional, usually generated on deploy)
 staticfiles/
+ppa_list.txt
