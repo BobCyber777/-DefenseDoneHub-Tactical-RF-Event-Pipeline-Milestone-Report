@@ -15,12 +15,13 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'dev-defense-donehub-change-this-before-pro
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 # 3. ALLOWED HOSTS: Allow your local machine and your Tailscale Funnel URL
-ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    '0.0.0.0',
-    'cyberbob-virtual-machine-1.tail79edaa.ts.net', # Your active Funnel
-]
+# ALLOWED HOSTS
+ALLOWED_HOSTS = os.getenv(
+    "ALLOWED_HOSTS",
+    "localhost,127.0.0.1,0.0.0.0", 
+).split(",")
+
+print("### ALLOWED HOSTS LOADED:", ALLOWED_HOSTS)
 
 # Optional: If you want an absolute fallback for local rapid testing, 
 # you can append '*' if DEBUG is True, but keep it strict for the funnel:
