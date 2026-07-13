@@ -1,21 +1,54 @@
-.env
+# Python
 venv/
+env/
 __pycache__/
-*.pyc
-google-chrome-stable_current_amd64.deb
+*.py[cod]
+*$py.class
+
+# Environment files
+.env
+.env.*
+
+# Django
 staticfiles/
-# Databases and backups
+media/
+
+# SQLite databases
 *.sqlite3
-*.json
+
+# Database backups
+db_backup*
 *.bak
 *.save
+*.pyhead
 
-# GitLab configurations and private data
+# GitLab data
 gitlab/
+
+# Local backups
+backups/
 
 # OS installers
 *.deb
 
-# Static files build directory (optional, usually generated on deploy)
-staticfiles/
+# Package lists
 ppa_list.txt
+apt_packages_list.txt
+snap_packages_list.txt
+software_versions.txt
+systemd_*.txt
+
+# macOS/Linux editor files
+.DS_Store
+*~
+
+# Local infrastructure
+tailscale-config/
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
